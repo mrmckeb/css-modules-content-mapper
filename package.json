@@ -1,52 +1,29 @@
 {
-  "name": "css-modules-content-mapper",
-  "version": "0.2.0",
-  "description": "TypeScript content mapper for CSS modules",
-  "keywords": [
-    "content-mapper",
-    "css",
-    "css-modules",
-    "typescript"
-  ],
-  "homepage": "https://github.com/remcohaszing/css-modules-content-mapper#readme",
-  "bugs": "https://github.com/remcohaszing/css-modules-content-mapper/issues",
-  "repository": "remcohaszing/css-modules-content-mapper",
-  "funding": "https://github.com/sponsors/remcohaszing",
-  "license": "MIT",
-  "author": "Remco Haszing <remcohaszing@gmail.com>",
+  "name": "content-mappers",
+  "private": true,
   "type": "module",
-  "files": [
-    "lib"
+  "workspaces": [
+    "packages/*"
   ],
-  "typescript": {
-    "contentMapper": {
-      "exec": [
-        "node",
-        "lib/content-mapper.js"
-      ],
-      "compilerOptions": [],
-      "dynamicConfig": false
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26.0.0"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "^11.0.0"
     }
   },
   "scripts": {
-    "test": "node --test"
-  },
-  "dependencies": {
-    "estree-util-is-identifier-name": "^3.0.0",
-    "lodash.camelcase": "^4.0.0",
-    "postcss-safe-parser": "^7.0.0",
-    "postcss-selector-parser": "^7.0.0",
-    "vscode-jsonrpc": "^10.0.0"
+    "test": "npm test --workspaces --if-present"
   },
   "devDependencies": {
     "@remcohaszing/eslint": "^14.0.0",
-    "@types/lodash.camelcase": "^4.0.0",
-    "@types/node": "^26.0.0",
-    "css-modules-content-mapper": "file:.",
+    "@types/node": "^22.0.0",
     "prettier": "^3.0.0",
     "remark-cli": "^12.0.0",
     "remark-preset-remcohaszing": "^3.0.0",
-    "snapshot-fixtures": "^1.0.0",
     "typescript": "^6.0.0"
   }
 }

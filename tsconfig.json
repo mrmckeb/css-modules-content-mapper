@@ -1,9 +1,12 @@
 {
-  "exclude": ["fixtures"],
+  "exclude": ["packages/*/fixtures"],
   "compilerOptions": {
     "checkJs": true,
+    "exactOptionalPropertyTypes": true,
     "module": "nodenext",
     "noEmit": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
     "target": "esnext",
     "lib": ["esnext"],
     "types": ["node"],

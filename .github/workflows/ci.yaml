@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: 26
       - run: npm ci
-      - run: npm pack
+      - run: npm pack --workspaces
       - uses: actions/upload-artifact@v7
         with:
-          name: package
+          name: packages
           path: '*.tgz'
 
   prettier:
@@ -94,5 +94,16 @@ jobs:
           node-version: 26
           registry-url: https://registry.npmjs.org
       - uses: actions/download-artifact@v8
-        with: { name: package }
-      - run: npm stage publish *.tgz
+        with: { name: packages }
+      - id: tarball
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          file="${TAG%@*}-${TAG##*@}.tgz"
+          if [ ! -f "$file" ]; then
+            echo "::error::No tarball $file for tag $TAG. Does the tag match the package name and version?"
+            ls *.tgz
+            exit 1
+          fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+      - run: npm stage publish ${{ steps.tarball.outputs.file }}
