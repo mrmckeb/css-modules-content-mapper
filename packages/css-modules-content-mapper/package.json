@@ -22,6 +22,12 @@
   "files": [
     "lib"
   ],
+  "exports": {
+    "./core": "./lib/core.js",
+    "./protocol": {
+      "types": "./lib/protocol.ts"
+    }
+  },
   "typescript": {
     "contentMapper": {
       "exec": [

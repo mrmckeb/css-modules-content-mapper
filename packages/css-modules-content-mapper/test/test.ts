@@ -45,6 +45,9 @@ testFixturesDirectory({
         new StreamMessageWriter(proc.stdin)
       )
 
+      // Reject pending requests if the mapper exits, instead of waiting forever.
+      proc.once('exit', () => connection.dispose())
+
       connection.listen()
 
       const projectHandle = `${pkg.name}@${pkg.version}:0`

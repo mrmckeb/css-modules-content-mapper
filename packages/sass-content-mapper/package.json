@@ -36,6 +36,28 @@
   "scripts": {
     "test": "node --test"
   },
+  "dependencies": {
+    "css-modules-content-mapper": "^0.2.0"
+  },
+  "devDependencies": {
+    "sass": "^1.106.1",
+    "sass-embedded": "^1.106.1",
+    "snapshot-fixtures": "^1.0.0",
+    "typescript": "^6.0.0",
+    "vscode-jsonrpc": "^10.0.0"
+  },
+  "peerDependencies": {
+    "sass": "^1.71.1",
+    "sass-embedded": "^1.71.1"
+  },
+  "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    },
+    "sass-embedded": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
   }

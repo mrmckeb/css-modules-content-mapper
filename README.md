@@ -6,10 +6,10 @@
 
 ## Packages
 
-| Package                                                                       | Description                                      |
-| ----------------------------------------------------------------------------- | ------------------------------------------------ |
-| [`css-modules-content-mapper`](packages/css-modules-content-mapper/README.md) | TypeScript content mapper for CSS modules        |
-| [`sass-content-mapper`](packages/sass-content-mapper/README.md)               | TypeScript content mapper for Sass modules (WIP) |
+| Package                                                                       | Description                                |
+| ----------------------------------------------------------------------------- | ------------------------------------------ |
+| [`css-modules-content-mapper`](packages/css-modules-content-mapper/README.md) | TypeScript content mapper for CSS modules  |
+| [`sass-content-mapper`](packages/sass-content-mapper/README.md)               | TypeScript content mapper for Sass modules |
 
 ## License
 
