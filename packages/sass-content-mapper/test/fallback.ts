@@ -1,4 +1,4 @@
-import type { TransformResult } from 'css-modules-content-mapper/protocol'
+import type { TransformResult } from '../lib/protocol.js'
 
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'

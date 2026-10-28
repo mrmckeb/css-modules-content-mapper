@@ -89,15 +89,26 @@ const allowedLocalsConventions = /** @type {const} */ ([
  */
 
 /**
+ * @typedef ValidatedOptions
+ * @property {OptionDiagnostic[]} diagnostics
+ *   Diagnostics for invalid option values.
+ * @property {Record<string, unknown>} options
+ *   The options to use, with invalid values removed.
+ */
+
+/**
  * @typedef Adapter
  * @property {string} diagnosticSource
  *   The source identifier displayed for mapper-produced diagnostics.
  * @property {(params: PreprocessParams) => PreprocessResult} [preprocess]
  *   Compile the original content to CSS. If omitted, the content is treated as CSS.
- * @property {(options: Record<string, unknown>) => OptionDiagnostic[]} [validateOptions]
- *   Validate adapter-specific options from the `contentMappers` entry.
+ * @property {(options: Record<string, unknown>) => ValidatedOptions} [validateOptions]
+ *   Validate adapter-specific options from the `contentMappers` entry. TypeScript still opens the
+ *   project if options are invalid, so the returned options are used instead of the original ones.
  * @property {() => void} [dispose]
- *   Release resources, such as a compiler process, when TypeScript closes the connection.
+ *   Release resources that would keep the process alive, such as a compiler process. This is
+ *   called when the connection closes, so the mapper still exits cleanly if TypeScript stops
+ *   without shutting it down, for example if it crashes.
  */
 
 /**
@@ -435,29 +446,32 @@ export function startMapper(adapter) {
     /** @type {OptionDiagnostic[]} */
     const optionDiagnostics = []
 
-    if (localsConvention != null && !allowedLocalsConventions.includes(localsConvention)) {
+    const isValidLocalsConvention =
+      localsConvention == null || allowedLocalsConventions.includes(localsConvention)
+    if (!isValidLocalsConvention) {
       optionDiagnostics.push({
         path: ['localsConvention'],
-        messageText: `Content mapper option 'localsConvention' must be one of ${allowedLocalsConventions.map((value) => `'${value}'`).join(', ')}.`,
+        messageText: `Argument for 'localsConvention' option must be: ${allowedLocalsConventions.map((value) => `'${value}'`).join(', ')}.`,
         code: 1001
       })
     }
 
-    if (adapter.validateOptions) {
-      optionDiagnostics.push(...adapter.validateOptions(options))
+    const validated = adapter.validateOptions?.(options)
+    if (validated) {
+      optionDiagnostics.push(...validated.diagnostics)
     }
 
-    if (optionDiagnostics.length) {
-      return { optionDiagnostics }
-    }
-
+    // TypeScript still opens the project if options are invalid. Storing nothing would discard all
+    // settings, and storing the original options would pass invalid values to the preprocessor, so
+    // the project is stored with only the valid values.
     projects.set(projectHandle, {
       configFileName: configFileName ?? '',
-      localsConvention,
-      options,
+      localsConvention: isValidLocalsConvention ? localsConvention : undefined,
+      options: validated?.options ?? options,
       lastResults: new Map()
     })
-    return {}
+
+    return optionDiagnostics.length ? { optionDiagnostics } : {}
   }
 
   /**
@@ -669,10 +683,11 @@ export function startMapper(adapter) {
     } catch (error) {
       // An adapter should report compile errors as diagnostics, but anything it throws is treated
       // the same way, so a bug in a preprocessor doesn’t fail the TypeScript request.
+      const reason = error instanceof Error ? error.message : String(error)
       result = {
         diagnostics: [
           {
-            messageText: error instanceof Error ? error.message : String(error),
+            messageText: `Cannot compile this file: ${reason.replace(/\.$/, '')}.`,
             start: 0,
             length: 0,
             code: 2000

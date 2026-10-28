@@ -1,12 +1,12 @@
 /**
- * @import { OptionDiagnostic } from 'css-modules-content-mapper/protocol'
+ * @import { OptionDiagnostic } from './protocol.js'
  * @import * as Sass from 'sass'
  */
 
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { startMapper } from 'css-modules-content-mapper/core'
+import { startMapper } from 'css-modules-content-mapper'
 
 import { indentedSyntax, scssSyntax } from './syntax.js'
 
@@ -55,8 +55,7 @@ async function loadSass() {
 
 const { compiler, dispose, sass } = (await loadSass()) ?? {}
 
-const missingSassMessage =
-  "Content mapper 'sass-content-mapper' requires 'sass-embedded' or 'sass' to be installed."
+const missingSassMessage = "Either 'sass-embedded' or 'sass' must be installed."
 
 startMapper({
   diagnosticSource: 'Sass',
@@ -65,26 +64,40 @@ startMapper({
     dispose?.()
   },
 
-  validateOptions({ loadPaths }) {
+  validateOptions(options) {
+    const { loadPaths } = options
+
     /** @type {OptionDiagnostic[]} */
     const diagnostics = []
+
+    /** @type {string[]} */
+    const validLoadPaths = []
 
     if (!sass) {
       diagnostics.push({ path: [], messageText: missingSassMessage, code: 1003 })
     }
 
-    if (
-      loadPaths != null &&
-      !(Array.isArray(loadPaths) && loadPaths.every((path) => typeof path === 'string'))
-    ) {
+    if (loadPaths != null && !Array.isArray(loadPaths)) {
       diagnostics.push({
         path: ['loadPaths'],
-        messageText: "Content mapper option 'loadPaths' must be an array of strings.",
+        messageText: "Content mapper option 'loadPaths' requires a value of type Array.",
         code: 1002
       })
+    } else if (loadPaths) {
+      for (const [index, path] of loadPaths.entries()) {
+        if (typeof path === 'string') {
+          validLoadPaths.push(path)
+        } else {
+          diagnostics.push({
+            path: ['loadPaths', index],
+            messageText: "Content mapper option 'loadPaths' requires a value of type string.",
+            code: 1002
+          })
+        }
+      }
     }
 
-    return diagnostics
+    return { diagnostics, options: { ...options, loadPaths: validLoadPaths } }
   },
 
   preprocess({ configFileName, content, fileName, options }) {

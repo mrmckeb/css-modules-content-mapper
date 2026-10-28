@@ -116,4 +116,5 @@ mappers, you are deliberately breaking this trust boundary.
 
 ## License
 
-[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing)
+[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing),
+[Brody McKee](https://github.com/mrmckeb)

@@ -13,4 +13,5 @@
 
 ## License
 
-[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing)
+[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing),
+[Brody McKee](https://github.com/mrmckeb)

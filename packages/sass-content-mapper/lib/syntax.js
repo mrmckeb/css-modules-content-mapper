@@ -1,5 +1,5 @@
 /**
- * @import { Syntax } from 'css-modules-content-mapper/core'
+ * @import { Syntax } from 'css-modules-content-mapper'
  */
 
 // These rules are heuristics. They handle selectors, nesting, interpolation, line comments, and

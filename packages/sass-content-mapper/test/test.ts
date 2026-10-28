@@ -1,9 +1,11 @@
-import type { TransformResult } from 'css-modules-content-mapper/protocol'
+import type { TransformResult } from '../lib/protocol.js'
 
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { testFixturesDirectory } from 'snapshot-fixtures'
 import typescript from 'typescript'
@@ -155,8 +157,7 @@ testFixturesDirectory({
 })
 
 test('reports a diagnostic if neither sass-embedded nor sass is installed', async () => {
-  const messageText =
-    "Content mapper 'sass-content-mapper' requires 'sass-embedded' or 'sass' to be installed."
+  const messageText = "Either 'sass-embedded' or 'sass' must be installed."
   const projectHandle = `${pkg.name}@${pkg.version}:0`
 
   const [command, ...args] = pkg.typescript.contentMapper.exec
@@ -190,5 +191,90 @@ test('reports a diagnostic if neither sass-embedded nor sass is installed', asyn
     text: 'declare const styles: {}\n\nexport = styles\n',
     mappings: [],
     diagnostics: [{ messageText, start: 0, length: 0, code: 2002 }]
+  })
+})
+
+test('reports an invalid loadPaths option', async (t) => {
+  const projectHandle = `${pkg.name}@${pkg.version}:0`
+
+  const [command, ...args] = pkg.typescript.contentMapper.exec
+  assert.ok(command)
+  using proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'] })
+  const connection = createMessageConnection(
+    new StreamMessageReader(proc.stdout),
+    new StreamMessageWriter(proc.stdin)
+  )
+
+  // Reject pending requests if the mapper exits, instead of waiting forever.
+  proc.once('exit', () => connection.dispose())
+
+  connection.listen()
+
+  await t.test('not an array', async () => {
+    const openProject = await connection.sendRequest('openProject', {
+      configFileName: '',
+      projectHandle,
+      options: { loadPaths: 'vendor' }
+    })
+    assert.deepEqual(openProject, {
+      optionDiagnostics: [
+        {
+          path: ['loadPaths'],
+          messageText: "Content mapper option 'loadPaths' requires a value of type Array.",
+          code: 1002
+        }
+      ]
+    })
+  })
+
+  await t.test('an array with values that are not strings', async () => {
+    const openProject = await connection.sendRequest('openProject', {
+      configFileName: '',
+      projectHandle,
+      options: { loadPaths: ['vendor', 1, null] }
+    })
+    assert.deepEqual(openProject, {
+      optionDiagnostics: [
+        {
+          path: ['loadPaths', 1],
+          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
+          code: 1002
+        },
+        {
+          path: ['loadPaths', 2],
+          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
+          code: 1002
+        }
+      ]
+    })
+  })
+
+  await t.test('uses the valid values', async () => {
+    const fixture = fileURLToPath(new URL('../fixtures/load-paths/', import.meta.url))
+    const fileName = join(fixture, 'input.scss')
+
+    const openProject = await connection.sendRequest('openProject', {
+      configFileName: join(fixture, 'tsconfig.json'),
+      projectHandle,
+      options: { loadPaths: ['vendor', 1] }
+    })
+    assert.deepEqual(openProject, {
+      optionDiagnostics: [
+        {
+          path: ['loadPaths', 1],
+          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
+          code: 1002
+        }
+      ]
+    })
+
+    // `library` can only be resolved through the valid `vendor` load path.
+    const transform = await connection.sendRequest<TransformResult>('transform', {
+      content: readFileSync(fileName, 'utf8'),
+      fileName,
+      projectHandle
+    })
+    assert.equal(transform.diagnostics, undefined)
+    assert.match(transform.text, /readonly library: string/)
   })
 })

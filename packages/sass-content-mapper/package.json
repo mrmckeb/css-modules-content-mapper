@@ -19,6 +19,9 @@
   "funding": "https://github.com/sponsors/remcohaszing",
   "license": "MIT",
   "author": "Remco Haszing <remcohaszing@gmail.com>",
+  "contributors": [
+    "Brody McKee (https://github.com/mrmckeb)"
+  ],
   "type": "module",
   "files": [
     "lib"
@@ -59,6 +62,6 @@
     }
   },
   "engines": {
-    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
+    "node": ">=22.0.0"
   }
 }
