@@ -31,6 +31,9 @@
   "scripts": {
     "test": "node --test"
   },
+  "allowScripts": {
+    "unrs-resolver": false
+  },
   "dependencies": {
     "estree-util-is-identifier-name": "^3.0.0",
     "lodash.camelcase": "^4.0.0",
