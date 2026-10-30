@@ -42,6 +42,15 @@ const allowedLocalsConventions = /** @type {const} */ ([
  */
 
 /**
+ * @typedef CssContentMapperOptions
+ *   Shared options for all CSS modules content mappers.
+ * @property {LocalsConvention} [localsConvention]
+ *   How to expose class names.
+ */
+
+/**
+ * @template {{}} Options
+ *   Content mapper options after validation.
  * @typedef PreprocessParams
  * @property {string} configFileName
  *   The absolute tsconfig path, or an empty string for a project without a config file.
@@ -49,7 +58,7 @@ const allowedLocalsConventions = /** @type {const} */ ([
  *   The original content of the file to transform.
  * @property {string} fileName
  *   The absolute path of the file to transform.
- * @property {Record<string, unknown>} options
+ * @property {Options & CssContentMapperOptions} options
  *   The options from the `contentMappers` entry.
  */
 
@@ -89,21 +98,25 @@ const allowedLocalsConventions = /** @type {const} */ ([
  */
 
 /**
- * @typedef ValidatedOptions
+ * @template {{}} Options
+ *   Content mapper options after validation.
+ * @typedef ValidateResult
  * @property {OptionDiagnostic[]} diagnostics
  *   Diagnostics for invalid option values.
- * @property {Record<string, unknown>} options
+ * @property {Options} options
  *   The options to use, with invalid values removed.
  */
 
 /**
+ * @template {{}} Options
+ *   Content mapper options after validation.
  * @typedef Adapter
  *   An adapter for a CSS modules preprocessor.
  * @property {string} diagnosticSource
  *   The source identifier displayed for content mapper produced diagnostics.
- * @property {(params: PreprocessParams) => PreprocessResult} [preprocess]
+ * @property {(params: PreprocessParams<Options>) => PreprocessResult} [preprocess]
  *   Compile the original content to CSS. If omitted, the content is treated as CSS.
- * @property {(options: Record<string, unknown>) => ValidatedOptions} [validateOptions]
+ * @property {(options: Record<string, unknown>) => ValidateResult<Options>} [validateOptions]
  *   Validate adapter-specific options from the `contentMappers` entry. TypeScript still opens the
  *   project if options are invalid, so the returned options are used instead of the original ones.
  * @property {() => void} [dispose]
@@ -113,12 +126,14 @@ const allowedLocalsConventions = /** @type {const} */ ([
  */
 
 /**
+ * @template {{}} Options
+ *   Content mapper options after validation.
  * @typedef Project
  * @property {string} configFileName
  *   The absolute tsconfig path, or an empty string for a project without a config file.
  * @property {LocalsConvention | undefined} localsConvention
  *   The locals convention to apply.
- * @property {Record<string, unknown>} options
+ * @property {Options} options
  *   The options from the `contentMappers` entry.
  * @property {Map<string, string>} lastResults
  *   The last successfully transformed text per file name, used when compilation fails.
@@ -399,7 +414,9 @@ function dashesCamelCase(string) {
 /**
  * Start a content mapper for CSS modules, optionally compiled from another language.
  *
- * @param {Adapter} adapter
+ * @template {{}} Options
+ *   Content mapper options after validation.
+ * @param {Adapter<Options>} adapter
  *   The adapter that defines how the content is processed.
  * @returns {undefined}
  *   Nothing.
@@ -408,7 +425,7 @@ export function startMapper(adapter) {
   /**
    * Map a project handle to its settings.
    *
-   * @type {Map<string, Project>}
+   * @type {Map<string, Project<Options>>}
    */
   const projects = new Map()
 
@@ -444,7 +461,7 @@ export function startMapper(adapter) {
    *   The result that TypeScript expects.
    */
   function openProject({ configFileName, options = {}, projectHandle }) {
-    const { localsConvention } = /** @type {{ localsConvention?: LocalsConvention }} */ (options)
+    const { localsConvention } = /** @type {CssContentMapperOptions} */ (options)
 
     /** @type {OptionDiagnostic[]} */
     const optionDiagnostics = []
@@ -470,7 +487,7 @@ export function startMapper(adapter) {
     projects.set(projectHandle, {
       configFileName: configFileName ?? '',
       localsConvention: isValidLocalsConvention ? localsConvention : undefined,
-      options: validated?.options ?? options,
+      options: /** @type {Options} */ (validated?.options ?? options),
       lastResults: new Map()
     })
 
@@ -681,7 +698,7 @@ export function startMapper(adapter) {
         configFileName: project?.configFileName ?? '',
         content,
         fileName,
-        options: project?.options ?? {}
+        options: /** @type {Options} */ (project?.options ?? {})
       })
     } catch (error) {
       // An adapter should report compile errors as diagnostics, but anything it throws is treated

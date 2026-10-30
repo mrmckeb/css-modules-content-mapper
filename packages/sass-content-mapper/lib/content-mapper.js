@@ -106,7 +106,7 @@ startMapper({
     }
 
     const projectDirectory = configFileName ? dirname(configFileName) : dirname(fileName)
-    const loadPaths = /** @type {string[] | undefined} */ (options.loadPaths) ?? []
+    const { loadPaths } = options
     const url = pathToFileURL(fileName)
     const indented = fileName.endsWith('.sass')
 
