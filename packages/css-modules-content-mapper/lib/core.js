@@ -43,6 +43,23 @@ const allowedLocalsConventions = /** @type {const} */ ([
  */
 
 /**
+ * Format a source snippet as a code block in a JSDoc comment.
+ *
+ * @param {string} ext
+ *   The code block language.
+ * @param {string} snippet
+ *   The source snippet.
+ * @returns {string}
+ *   The snippet formatted for a JSDoc comment.
+ */
+function formatPreview(ext, snippet) {
+  return ` * \`\`\`${ext}\n * ${snippet
+    .replaceAll(/\s*\/\*(.+?)\*\//g, '')
+    .replaceAll('*/', '*\u200B/')
+    .replaceAll('\n', '\n * ')}\n * \`\`\`\n`
+}
+
+/**
  * Convert a string from dashes to camel case.
  *
  * @param {string} string
@@ -197,11 +214,10 @@ export function startMapper(adapter) {
           break
         case 'rule': {
           const { end, start } = node.rangeBy()
-          const preview = ` * \`\`\`${ext}\n * ${content
-            .slice(start.offset + 1 - start.column, end.offset)
-            .replaceAll(/\s*\/\*(.+?)\*\//g, '')
-            .replaceAll('*/', '*\u200B/')
-            .replaceAll('\n', '\n * ')}\n * \`\`\`\n`
+          const preview = formatPreview(
+            ext,
+            content.slice(start.offset + 1 - start.column, end.offset)
+          )
 
           const selectorParser = parser((selectors) => {
             let isGlobal = false
