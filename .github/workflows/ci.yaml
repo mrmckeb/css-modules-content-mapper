@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: 26
       - run: npm ci
-      - run: npm pack
+      - run: npm --workspaces pack
       - uses: actions/upload-artifact@v7
         with:
-          name: package
+          name: packages
           path: '*.tgz'
 
   prettier:
@@ -94,5 +94,5 @@ jobs:
           node-version: 26
           registry-url: https://registry.npmjs.org
       - uses: actions/download-artifact@v8
-        with: { name: package }
+        with: { name: packages }
       - run: npm --workspace css-modules-content-mapper stage publish *.tgz
