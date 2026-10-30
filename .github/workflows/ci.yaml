@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 26
       - run: npm ci
-      - run: npm pack --workspaces
+      - run: npm --workspaces pack
       - uses: actions/upload-artifact@v7
         with:
           name: packages
@@ -95,15 +95,4 @@ jobs:
           registry-url: https://registry.npmjs.org
       - uses: actions/download-artifact@v8
         with: { name: packages }
-      - id: tarball
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          file="${TAG%@*}-${TAG##*@}.tgz"
-          if [ ! -f "$file" ]; then
-            echo "::error::No tarball $file for tag $TAG. Does the tag match the package name and version?"
-            ls *.tgz
-            exit 1
-          fi
-          echo "file=$file" >> "$GITHUB_OUTPUT"
-      - run: npm stage publish ${{ steps.tarball.outputs.file }}
+      - run: npm --workspace css-modules-content-mapper stage publish *.tgz

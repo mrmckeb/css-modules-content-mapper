@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  */
@@ -20,6 +20,8 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `local` → `local`
+| Original |     | Virtual |     | Definition |
+| -------- | --: | ------- | --: | :--------: |
+| `local`  | 135 | `local` | 127 |      ✓     |

@@ -2,6 +2,7 @@ import type { TransformResult } from '../lib/protocol.js'
 
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { dirname } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -22,7 +23,10 @@ const broken = '.valid {\n  color: red;\n}\n\n.broken {\n  color: $undefined-var
 test('keeps the last successful result when compilation fails', async () => {
   const [command, ...args] = pkg.typescript.contentMapper.exec
   assert.ok(command)
-  using proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'] })
+  using proc = spawn(command, args, {
+    stdio: ['pipe', 'pipe', 'inherit'],
+    cwd: dirname(import.meta.dirname)
+  })
   const connection = createMessageConnection(
     new StreamMessageReader(proc.stdout),
     new StreamMessageWriter(proc.stdin)

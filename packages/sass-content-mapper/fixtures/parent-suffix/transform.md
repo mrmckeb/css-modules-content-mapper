@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  * ```scss
@@ -42,8 +42,10 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `block` → `block`
-- `&__element` → `block__element`
-- `&--modifier` → `"block--modifier"`
+| Original      |    | Virtual             |     | Definition |
+| ------------- | -: | ------------------- | --: | :--------: |
+| `block`       |  1 | `block`             | 197 |      ✓     |
+| `&__element`  | 30 | `block__element`    | 293 |      ✓     |
+| `&--modifier` | 68 | `"block--modifier"` | 398 |      ✓     |

@@ -98,8 +98,9 @@ const allowedLocalsConventions = /** @type {const} */ ([
 
 /**
  * @typedef Adapter
+ *   An adapter for a CSS modules preprocessor.
  * @property {string} diagnosticSource
- *   The source identifier displayed for mapper-produced diagnostics.
+ *   The source identifier displayed for content mapper produced diagnostics.
  * @property {(params: PreprocessParams) => PreprocessResult} [preprocess]
  *   Compile the original content to CSS. If omitted, the content is treated as CSS.
  * @property {(options: Record<string, unknown>) => ValidatedOptions} [validateOptions]
@@ -400,6 +401,8 @@ function dashesCamelCase(string) {
  *
  * @param {Adapter} adapter
  *   The adapter that defines how the content is processed.
+ * @returns {undefined}
+ *   Nothing.
  */
 export function startMapper(adapter) {
   /**

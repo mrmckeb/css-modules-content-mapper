@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  * ```css
@@ -81,11 +81,13 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `id` → `id`
-- `cls` → `cls`
-- `nested` → `nested`
-- `hyphenated-class-name` → `"hyphenated-class-name"`
-- `🐈` → `"🐈"`
-- `🦉` → `"🦉"`
+| Original                |     | Virtual                   |     | Definition |
+| ----------------------- | --: | ------------------------- | --: | :--------: |
+| `id`                    |   1 | `id`                      |  96 |      ✓     |
+| `cls`                   |  47 | `cls`                     | 320 |      ✓     |
+| `nested`                |  86 | `nested`                  | 416 |      ✓     |
+| `hyphenated-class-name` | 194 | `"hyphenated-class-name"` | 603 |      ✓     |
+| `🐈`                    | 298 | `"🐈"`                    | 727 |      ✓     |
+| `🦉`                    | 309 | `"🦉"`                    | 832 |      ✓     |

@@ -1,15 +1,7 @@
 {
-  "exclude": ["packages/*/fixtures"],
-  "compilerOptions": {
-    "checkJs": true,
-    "exactOptionalPropertyTypes": true,
-    "module": "nodenext",
-    "noEmit": true,
-    "noImplicitOverride": true,
-    "noUncheckedIndexedAccess": true,
-    "target": "esnext",
-    "lib": ["esnext"],
-    "types": ["node"],
-    "verbatimModuleSyntax": true
-  }
+  "files": [],
+  "references": [
+    { "path": "./packages/css-modules-content-mapper/tsconfig.json" },
+    { "path": "./packages/sass-content-mapper/tsconfig.json" }
+  ]
 }

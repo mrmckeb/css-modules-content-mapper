@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { transformResultToMarkdown } from 'content-mapper-test-utils'
 import { testFixturesDirectory } from 'snapshot-fixtures'
 import typescript from 'typescript'
 import {
@@ -81,7 +82,8 @@ function createTransformTest(hidden: string[]) {
     const [command, ...args] = pkg.typescript.contentMapper.exec
     assert.ok(command)
     using proc = spawn(command, [...hidePackages(hidden), ...args], {
-      stdio: ['pipe', 'pipe', 'inherit']
+      stdio: ['pipe', 'pipe', 'inherit'],
+      cwd: dirname(import.meta.dirname)
     })
     const connection = createMessageConnection(
       new StreamMessageReader(proc.stdout),
@@ -114,35 +116,7 @@ function createTransformTest(hidden: string[]) {
     const closeProject = await connection.sendRequest('closeProject', { projectHandle })
     assert.deepEqual(closeProject, null)
 
-    return [
-      '## Text',
-      '',
-      '````ts',
-      transform.text,
-      '````',
-      '',
-      '## Mappings',
-      '',
-      ...(transform.mappings?.map(
-        ([virtualStart, virtualLength, originalStart, originalLength]) =>
-          `- \`${original.slice(
-            originalStart,
-            originalStart + originalLength
-          )}\` → \`${transform.text.slice(virtualStart, virtualStart + virtualLength)}\``
-      ) ?? []),
-      ...(transform.diagnostics?.length
-        ? [
-            '',
-            '## Diagnostics',
-            '',
-            ...transform.diagnostics.map(
-              ({ length, messageText, start }) =>
-                `- ${messageText} at \`${original.slice(start, start + length)}\``
-            )
-          ]
-        : []),
-      ''
-    ].join('\n')
+    return transformResultToMarkdown(original, transform)
   }
 }
 
@@ -163,7 +137,8 @@ test('reports a diagnostic if neither sass-embedded nor sass is installed', asyn
   const [command, ...args] = pkg.typescript.contentMapper.exec
   assert.ok(command)
   using proc = spawn(command, [...hidePackages(['sass-embedded', 'sass']), ...args], {
-    stdio: ['pipe', 'pipe', 'inherit']
+    stdio: ['pipe', 'pipe', 'inherit'],
+    cwd: dirname(import.meta.dirname)
   })
   const connection = createMessageConnection(
     new StreamMessageReader(proc.stdout),
@@ -199,7 +174,10 @@ test('reports an invalid loadPaths option', async (t) => {
 
   const [command, ...args] = pkg.typescript.contentMapper.exec
   assert.ok(command)
-  using proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'] })
+  using proc = spawn(command, args, {
+    stdio: ['pipe', 'pipe', 'inherit'],
+    cwd: dirname(import.meta.dirname)
+  })
   const connection = createMessageConnection(
     new StreamMessageReader(proc.stdout),
     new StreamMessageWriter(proc.stdin)

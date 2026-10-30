@@ -1,8 +1,14 @@
-# Content mappers
+# CSS modules content mappers
 
 [![github actions](https://github.com/remcohaszing/css-modules-content-mapper/actions/workflows/ci.yaml/badge.svg)](https://github.com/remcohaszing/css-modules-content-mapper/actions/workflows/ci.yaml)
 
-[TypeScript](https://www.typescriptlang.org) content mappers for stylesheets.
+The monorepo for [TypeScript](https://www.typescriptlang.org) content mappers related to
+[CSS modules](https://github.com/css-modules/css-modules).
+
+## Table of Contents
+
+- [Packages](#packages)
+- [License](#license)
 
 ## Packages
 
@@ -13,5 +19,4 @@
 
 ## License
 
-[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing),
-[Brody McKee](https://github.com/mrmckeb)
+[MIT](LICENSE.md) © [Remco Haszing](https://github.com/remcohaszing)

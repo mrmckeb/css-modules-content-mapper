@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 
+import { transformResultToMarkdown } from 'content-mapper-test-utils'
 import { testFixturesDirectory } from 'snapshot-fixtures'
 import typescript from 'typescript'
 import {
@@ -38,15 +39,14 @@ testFixturesDirectory({
       const contentMapper = (raw.contentMappers as any[]).find((cm) => cm.package === pkg.name)
 
       const [command, ...args] = pkg.typescript.contentMapper.exec
-      assert.ok(command)
-      using proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'] })
+      using proc = spawn(command, args, {
+        stdio: ['pipe', 'pipe', 'inherit'],
+        cwd: dirname(import.meta.dirname)
+      })
       const connection = createMessageConnection(
         new StreamMessageReader(proc.stdout),
         new StreamMessageWriter(proc.stdin)
       )
-
-      // Reject pending requests if the mapper exits, instead of waiting forever.
-      proc.once('exit', () => connection.dispose())
 
       connection.listen()
 
@@ -70,24 +70,7 @@ testFixturesDirectory({
       const closeProject = await connection.sendRequest('closeProject', { projectHandle })
       assert.deepEqual(closeProject, null)
 
-      return [
-        '## Text',
-        '',
-        '````ts',
-        transform.text,
-        '````',
-        '',
-        '## Mappings',
-        '',
-        ...(transform.mappings?.map(
-          ([virtualStart, virtualLength, originalStart, originalLength]) =>
-            `- \`${original.slice(
-              originalStart,
-              originalStart + originalLength
-            )}\` → \`${transform.text.slice(virtualStart, virtualStart + virtualLength)}\``
-        ) ?? []),
-        ''
-      ].join('\n')
+      return transformResultToMarkdown(original, transform)
     }
   }
 })

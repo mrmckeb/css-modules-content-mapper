@@ -1,15 +1,12 @@
 ## Text
 
-````ts
+```cts
 declare const styles: {}
 
 export = styles
 
-````
-
-## Mappings
-
+```
 
 ## Diagnostics
 
-- expected end of rule. at ``
+- `24:0`: `expected end of rule.`

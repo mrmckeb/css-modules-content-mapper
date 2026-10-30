@@ -73,9 +73,8 @@ while you are typing.
 ## CSS syntax
 
 This project does **not** check CSS validity. You can use a linter, such as
-[Stylelint](https://stylelint.io), for that. This project also doesn’t support CSS variants. For
-[Sass](https://sass-lang.com), use [`sass-content-mapper`](../sass-content-mapper/README.md).
-Support for [Less](https://lesscss.org) is coming soon.
+[Stylelint](https://stylelint.io), for that. This project also doesn’t support CSS variants such as
+[Sass](https://sass-lang.com) or [Less](https://lesscss.org).
 
 ## Compatibility
 

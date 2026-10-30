@@ -1,15 +1,12 @@
 ## Text
 
-````ts
+```cts
 declare const styles: {}
 
 export = styles
 
-````
-
-## Mappings
-
+```
 
 ## Diagnostics
 
-- Undefined variable. at `$red`
+- `43:4`: `Undefined variable.`

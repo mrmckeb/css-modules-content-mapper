@@ -8,7 +8,7 @@
     "css-modules",
     "typescript"
   ],
-  "homepage": "https://github.com/remcohaszing/css-modules-content-mapper/tree/main/packages/css-modules-content-mapper#readme",
+  "homepage": "https://github.com/remcohaszing/css-modules-content-mapper#readme",
   "bugs": "https://github.com/remcohaszing/css-modules-content-mapper/issues",
   "repository": {
     "type": "git",
@@ -18,15 +18,14 @@
   "funding": "https://github.com/sponsors/remcohaszing",
   "license": "MIT",
   "author": "Remco Haszing <remcohaszing@gmail.com>",
-  "contributors": [
-    "Brody McKee (https://github.com/mrmckeb)"
-  ],
   "type": "module",
   "files": [
-    "lib"
+    "lib",
+    "types"
   ],
   "exports": {
-    ".": "./lib/core.js"
+    "types": "./types/core.d.ts",
+    "default": "./lib/core.js"
   },
   "typescript": {
     "contentMapper": {
@@ -50,10 +49,9 @@
   },
   "devDependencies": {
     "@types/lodash.camelcase": "^4.0.0",
+    "@types/node": "^26.0.0",
+    "content-mapper-test-utils": "^0.0.0",
     "snapshot-fixtures": "^1.0.0",
     "typescript": "^6.0.0"
-  },
-  "engines": {
-    "node": ">=22.0.0"
   }
 }

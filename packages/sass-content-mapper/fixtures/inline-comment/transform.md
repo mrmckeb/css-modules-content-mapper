@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  * ```scss
@@ -16,6 +16,8 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `red` → `red`
+| Original |    | Virtual |    | Definition |
+| -------- | -: | ------- | -: | :--------: |
+| `red`    | 57 | `red`   | 95 |      ✓     |

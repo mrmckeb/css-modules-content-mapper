@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
+import { dirname } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -21,7 +22,10 @@ const projectHandle = `${pkg.name}@${pkg.version}:0`
 test('exits when stdin is closed', async () => {
   const [command, ...args] = pkg.typescript.contentMapper.exec
   assert.ok(command)
-  using proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'] })
+  using proc = spawn(command, args, {
+    stdio: ['pipe', 'pipe', 'inherit'],
+    cwd: dirname(import.meta.dirname)
+  })
   const connection = createMessageConnection(
     new StreamMessageReader(proc.stdout),
     new StreamMessageWriter(proc.stdin)

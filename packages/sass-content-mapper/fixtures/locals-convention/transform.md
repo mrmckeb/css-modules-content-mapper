@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  * ```scss
@@ -25,7 +25,9 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `&--modifier` → `"hyphenated-class--modifier"`
-- `&--modifier` → `hyphenatedClassModifier`
+| Original      |    | Virtual                        |     | Definition |
+| ------------- | -: | ------------------------------ | --: | :--------: |
+| `&--modifier` | 22 | `"hyphenated-class--modifier"` | 108 |      ✓     |
+| `&--modifier` | 22 | `hyphenatedClassModifier`      | 230 |      ✓     |
