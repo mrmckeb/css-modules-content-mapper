@@ -1,5 +1,5 @@
 /**
- * @import { OptionDiagnostic } from './protocol.js'
+ * @import { OptionDiagnostic } from 'content-mapper-test-utils'
  * @import * as Sass from 'sass'
  */
 

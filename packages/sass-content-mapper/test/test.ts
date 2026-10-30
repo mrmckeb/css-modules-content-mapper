@@ -1,4 +1,4 @@
-import type { TransformResult } from '../lib/protocol.js'
+import type { TransformResult } from 'content-mapper-test-utils'
 
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
