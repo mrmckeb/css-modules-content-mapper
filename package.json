@@ -45,6 +45,7 @@
     "@remcohaszing/eslint": "^14.0.0",
     "@types/lodash.camelcase": "^4.0.0",
     "@types/node": "^26.0.0",
+    "content-mapper-test-utils": "^0.0.0",
     "css-modules-content-mapper": "file:.",
     "prettier": "^3.0.0",
     "remark-cli": "^12.0.0",

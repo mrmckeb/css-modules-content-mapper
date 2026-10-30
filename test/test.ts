@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 
+import { transformResultToMarkdown } from 'content-mapper-test-utils'
 import { testFixturesDirectory } from 'snapshot-fixtures'
 import typescript from 'typescript'
 import {
@@ -66,24 +67,7 @@ testFixturesDirectory({
       const closeProject = await connection.sendRequest('closeProject', { projectHandle })
       assert.deepEqual(closeProject, null)
 
-      return [
-        '## Text',
-        '',
-        '````ts',
-        transform.text,
-        '````',
-        '',
-        '## Mappings',
-        '',
-        ...(transform.mappings?.map(
-          ([virtualStart, virtualLength, originalStart, originalLength]) =>
-            `- \`${original.slice(
-              originalStart,
-              originalStart + originalLength
-            )}\` → \`${transform.text.slice(virtualStart, virtualStart + virtualLength)}\``
-        ) ?? []),
-        ''
-      ].join('\n')
+      return transformResultToMarkdown(original, transform)
     }
   }
 })

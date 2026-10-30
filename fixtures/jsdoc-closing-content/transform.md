@@ -1,6 +1,6 @@
 ## Text
 
-````ts
+````cts
 declare const styles: {
 /**
  * ```css
@@ -16,6 +16,8 @@ export = styles
 
 ````
 
-## Mappings
+## Alias mappings
 
-- `doc` → `doc`
+| Original |    | Virtual |     | Definition |
+| -------- | -: | ------- | --: | :--------: |
+| `doc`    |  1 | `doc`   | 101 |      ✓     |

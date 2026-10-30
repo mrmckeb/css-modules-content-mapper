@@ -1,11 +1,8 @@
 ## Text
 
-````ts
+```cts
 declare const styles: {}
 
 export = styles
 
-````
-
-## Mappings
-
+```
