@@ -1,2 +1,2 @@
-fixtures/*/transform.md
-fixtures/syntax-error/input.css
+packages/*/fixtures/*/transform.md
+packages/*/fixtures/syntax-error/input.*
