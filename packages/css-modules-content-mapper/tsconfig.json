@@ -1,7 +1,7 @@
 {
-  "exclude": ["fixtures"],
+  "exclude": ["fixtures", "lib"],
+  "references": [{ "path": "./tsconfig.build.json" }],
   "compilerOptions": {
-    "checkJs": true,
     "module": "nodenext",
     "noEmit": true,
     "target": "esnext",

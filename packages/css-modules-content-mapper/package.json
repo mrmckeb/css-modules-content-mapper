@@ -20,8 +20,13 @@
   "author": "Remco Haszing <remcohaszing@gmail.com>",
   "type": "module",
   "files": [
-    "lib"
+    "lib",
+    "types"
   ],
+  "exports": {
+    "types": "./types/core.d.ts",
+    "default": "./lib/core.js"
+  },
   "typescript": {
     "contentMapper": {
       "exec": [

@@ -1,0 +1,16 @@
+{
+  "include": ["lib"],
+  "compilerOptions": {
+    "checkJs": true,
+    "composite": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "module": "nodenext",
+    "outDir": "types",
+    "rootDir": "lib",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "types": ["node"],
+    "verbatimModuleSyntax": true
+  }
+}
