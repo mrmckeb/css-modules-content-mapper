@@ -97,7 +97,7 @@ startMapper({
       }
     }
 
-    return { diagnostics, options: { ...options, loadPaths: validLoadPaths } }
+    return { diagnostics, options: { loadPaths: validLoadPaths } }
   },
 
   preprocess({ configFileName, content, fileName, options }) {
