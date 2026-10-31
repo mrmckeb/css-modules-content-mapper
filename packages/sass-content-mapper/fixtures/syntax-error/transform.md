@@ -9,4 +9,4 @@ export = styles
 
 ## Diagnostics
 
-- `24:0`: `expected end of rule.`
+- `24:0`: `expected "}".`

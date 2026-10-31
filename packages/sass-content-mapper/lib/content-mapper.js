@@ -112,6 +112,7 @@ startMapper({
 
     try {
       const result = compiler.compileString(content, {
+        // Available in ESM from Sass 1.71.1.
         importers: [new sass.NodePackageImporter(projectDirectory)],
         loadPaths: [
           resolve(projectDirectory, 'node_modules'),

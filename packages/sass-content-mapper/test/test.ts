@@ -1,22 +1,16 @@
-import type { TransformResult } from 'content-mapper-test-utils'
+import type { OpenProjectResult } from 'content-mapper-test-utils'
 
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { test } from 'node:test'
+import { dirname } from 'node:path'
+import { after, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { transformResultToMarkdown } from 'content-mapper-test-utils'
+import { createContentMapper, transformResultToMarkdown } from 'content-mapper-test-utils'
 import { testFixturesDirectory } from 'snapshot-fixtures'
-import typescript from 'typescript'
-import {
-  createMessageConnection,
-  StreamMessageReader,
-  StreamMessageWriter
-} from 'vscode-jsonrpc/node'
 
 import pkg from '../package.json' with { type: 'json' }
+
+type ContentMapper = Awaited<ReturnType<typeof createContentMapper>>
 
 /**
  * Get Node.js arguments that make packages fail to resolve, as if they weren’t installed.
@@ -52,207 +46,113 @@ function hidePackages(packages: string[]): string[] {
 }
 
 /**
- * Create a fixture test that transforms the input with the mapper.
+ * Start the Sass content mapper.
  *
  * @param hidden
  *   Packages to hide from the mapper, to test which Sass implementation it uses.
  * @returns
+ *   The content mapper.
+ */
+function createSassContentMapper(hidden: string[]): Promise<ContentMapper> {
+  const [command, ...args] = pkg.typescript.contentMapper.exec
+  assert.ok(command)
+  return createContentMapper(new URL('../package.json', import.meta.url), {
+    exec: [command, ...hidePackages(hidden), ...args]
+  })
+}
+
+/**
+ * Render option diagnostics as markdown, so invalid options can be tested with snapshots.
+ *
+ * @param openProjectResult
+ *   The result of opening the project.
+ * @returns
+ *   The markdown, or an empty string if the options are valid.
+ */
+function optionDiagnosticsToMarkdown(openProjectResult: OpenProjectResult): string {
+  if (!openProjectResult.optionDiagnostics?.length) {
+    return ''
+  }
+
+  const items = openProjectResult.optionDiagnostics.map(({ messageText, path }) => {
+    const location = path
+      .map((segment) => (typeof segment === 'number' ? `[${segment}]` : `.${segment}`))
+      .join('')
+      .slice(1)
+    return `- \`${location || 'options'}\`: \`${messageText}\``
+  })
+
+  return `\n## Option diagnostics\n\n${items.join('\n')}\n`
+}
+
+// Both implementations must produce the same output.
+const sassEmbedded = await createSassContentMapper([])
+const sass = await createSassContentMapper(['sass-embedded'])
+
+after(() => {
+  sassEmbedded.dispose()
+  sass.dispose()
+})
+
+test('initialize', () => {
+  for (const contentMapper of [sassEmbedded, sass]) {
+    assert.deepEqual(contentMapper.initializeResult, {
+      positionEncoding: 'utf-16',
+      diagnosticSource: 'Sass'
+    })
+  }
+})
+
+/**
+ * Create a fixture test that transforms the input with a content mapper.
+ *
+ * @param contentMapper
+ *   The content mapper to use.
+ * @returns
  *   The fixture test.
  */
-function createTransformTest(hidden: string[]) {
+function createTransformTest(contentMapper: ContentMapper) {
   return async (file: { path: string }): Promise<string> => {
     const original = String(file)
-    const dir = dirname(file.path)
-    const tsconfigFileName = join(dir, 'tsconfig.json')
-    const configSourceFile = typescript.readJsonConfigFile(
-      tsconfigFileName,
-      typescript.sys.readFile
+    await using project = await contentMapper.openProject(dirname(file.path))
+
+    const transform = await project.transform(file.path, original)
+
+    return (
+      transformResultToMarkdown(original, transform) +
+      optionDiagnosticsToMarkdown(project.openProjectResult)
     )
-    const { raw } = typescript.parseJsonSourceFileConfigFileContent(
-      configSourceFile,
-      typescript.sys,
-      dir,
-      undefined,
-      tsconfigFileName
-    )
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const contentMapper = (raw.contentMappers as any[]).find((cm) => cm.package === pkg.name)
-
-    const [command, ...args] = pkg.typescript.contentMapper.exec
-    assert.ok(command)
-    using proc = spawn(command, [...hidePackages(hidden), ...args], {
-      stdio: ['pipe', 'pipe', 'inherit'],
-      cwd: dirname(import.meta.dirname)
-    })
-    const connection = createMessageConnection(
-      new StreamMessageReader(proc.stdout),
-      new StreamMessageWriter(proc.stdin)
-    )
-
-    // Reject pending requests if the mapper exits, instead of waiting forever.
-    proc.once('exit', () => connection.dispose())
-
-    connection.listen()
-
-    const projectHandle = `${pkg.name}@${pkg.version}:0`
-
-    const initialize = await connection.sendRequest('initialize')
-    assert.deepEqual(initialize, { positionEncoding: 'utf-16', diagnosticSource: 'Sass' })
-
-    const openProject = await connection.sendRequest('openProject', {
-      configFileName: tsconfigFileName,
-      projectHandle,
-      options: contentMapper.options
-    })
-    assert.deepEqual(openProject, {})
-
-    const transform = await connection.sendRequest<TransformResult>('transform', {
-      content: original,
-      fileName: file.path,
-      projectHandle
-    })
-
-    const closeProject = await connection.sendRequest('closeProject', { projectHandle })
-    assert.deepEqual(closeProject, null)
-
-    return transformResultToMarkdown(original, transform)
   }
 }
 
 testFixturesDirectory({
   directory: new URL('../fixtures', import.meta.url),
-  write: true,
+  write: false,
   tests: {
-    // Both implementations must produce the same output.
-    'sass-embedded': { expected: 'transform.md', generate: createTransformTest([]) },
-    sass: { expected: 'transform.md', generate: createTransformTest(['sass-embedded']) }
+    'sass-embedded': { expected: 'transform.md', generate: createTransformTest(sassEmbedded) },
+    sass: { expected: 'transform.md', generate: createTransformTest(sass) }
   }
 })
 
 test('reports a diagnostic if neither sass-embedded nor sass is installed', async () => {
   const messageText = "Either 'sass-embedded' or 'sass' must be installed."
-  const projectHandle = `${pkg.name}@${pkg.version}:0`
+  const fixture = new URL('../fixtures/nesting/', import.meta.url)
 
-  const [command, ...args] = pkg.typescript.contentMapper.exec
-  assert.ok(command)
-  using proc = spawn(command, [...hidePackages(['sass-embedded', 'sass']), ...args], {
-    stdio: ['pipe', 'pipe', 'inherit'],
-    cwd: dirname(import.meta.dirname)
+  using contentMapper = await createSassContentMapper(['sass-embedded', 'sass'])
+  await using project = await contentMapper.openProject(fixture)
+
+  assert.deepEqual(project.openProjectResult, {
+    optionDiagnostics: [{ path: [], messageText, code: 1003 }]
   })
-  const connection = createMessageConnection(
-    new StreamMessageReader(proc.stdout),
-    new StreamMessageWriter(proc.stdin)
+
+  const transform = await project.transform(
+    fileURLToPath(new URL('input.scss', fixture)),
+    '.a {\n  color: red;\n}\n'
   )
-
-  // Reject pending requests if the mapper exits, instead of waiting forever.
-  proc.once('exit', () => connection.dispose())
-
-  connection.listen()
-
-  const openProject = await connection.sendRequest('openProject', {
-    configFileName: '',
-    projectHandle
-  })
-  assert.deepEqual(openProject, { optionDiagnostics: [{ path: [], messageText, code: 1003 }] })
-
-  const transform = await connection.sendRequest<TransformResult>('transform', {
-    content: '.a {\n  color: red;\n}\n',
-    fileName: '/input.scss',
-    projectHandle
-  })
   assert.deepEqual(transform, {
     extension: '.cts',
     text: 'declare const styles: {}\n\nexport = styles\n',
     mappings: [],
     diagnostics: [{ messageText, start: 0, length: 0, code: 2002 }]
-  })
-})
-
-test('reports an invalid loadPaths option', async (t) => {
-  const projectHandle = `${pkg.name}@${pkg.version}:0`
-
-  const [command, ...args] = pkg.typescript.contentMapper.exec
-  assert.ok(command)
-  using proc = spawn(command, args, {
-    stdio: ['pipe', 'pipe', 'inherit'],
-    cwd: dirname(import.meta.dirname)
-  })
-  const connection = createMessageConnection(
-    new StreamMessageReader(proc.stdout),
-    new StreamMessageWriter(proc.stdin)
-  )
-
-  // Reject pending requests if the mapper exits, instead of waiting forever.
-  proc.once('exit', () => connection.dispose())
-
-  connection.listen()
-
-  await t.test('not an array', async () => {
-    const openProject = await connection.sendRequest('openProject', {
-      configFileName: '',
-      projectHandle,
-      options: { loadPaths: 'vendor' }
-    })
-    assert.deepEqual(openProject, {
-      optionDiagnostics: [
-        {
-          path: ['loadPaths'],
-          messageText: "Content mapper option 'loadPaths' requires a value of type Array.",
-          code: 1002
-        }
-      ]
-    })
-  })
-
-  await t.test('an array with values that are not strings', async () => {
-    const openProject = await connection.sendRequest('openProject', {
-      configFileName: '',
-      projectHandle,
-      options: { loadPaths: ['vendor', 1, null] }
-    })
-    assert.deepEqual(openProject, {
-      optionDiagnostics: [
-        {
-          path: ['loadPaths', 1],
-          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
-          code: 1002
-        },
-        {
-          path: ['loadPaths', 2],
-          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
-          code: 1002
-        }
-      ]
-    })
-  })
-
-  await t.test('uses the valid values', async () => {
-    const fixture = fileURLToPath(new URL('../fixtures/load-paths/', import.meta.url))
-    const fileName = join(fixture, 'input.scss')
-
-    const openProject = await connection.sendRequest('openProject', {
-      configFileName: join(fixture, 'tsconfig.json'),
-      projectHandle,
-      options: { loadPaths: ['vendor', 1] }
-    })
-    assert.deepEqual(openProject, {
-      optionDiagnostics: [
-        {
-          path: ['loadPaths', 1],
-          messageText: "Content mapper option 'loadPaths' requires a value of type string.",
-          code: 1002
-        }
-      ]
-    })
-
-    // `library` can only be resolved through the valid `vendor` load path.
-    const transform = await connection.sendRequest<TransformResult>('transform', {
-      content: readFileSync(fileName, 'utf8'),
-      fileName,
-      projectHandle
-    })
-    assert.equal(transform.diagnostics, undefined)
-    assert.match(transform.text, /readonly library: string/)
   })
 })

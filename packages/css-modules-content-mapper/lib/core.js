@@ -16,6 +16,7 @@
  * } from './protocol.js'
  */
 
+import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 
 import { name as isIdentifierName } from 'estree-util-is-identifier-name'
@@ -412,6 +413,49 @@ function dashesCamelCase(string) {
 }
 
 /**
+ * Collect local names for a given class name.
+ *
+ * @param {LocalsConvention | undefined} localsConvention
+ *   The locals convention to apply.
+ * @param {string} className
+ *   The CSS class name for which to collect local names.
+ * @param {Set<string>} localNames
+ *   The local names to add to.
+ * @see https://github.com/madyankin/postcss-modules/blob/v9.0.1/src/localsConvention.js#L25-L53
+ */
+function collectLocalNames(localsConvention, className, localNames) {
+  switch (localsConvention) {
+    case 'all':
+      localNames.add(className)
+      localNames.add(camelCase(className))
+      localNames.add(dashesCamelCase(className))
+      break
+
+    case 'camelCase':
+      localNames.add(className)
+      localNames.add(camelCase(className))
+      break
+
+    case 'camelCaseOnly':
+      localNames.add(camelCase(className))
+      break
+
+    case 'dashes':
+      localNames.add(className)
+      localNames.add(dashesCamelCase(className))
+      break
+
+    case 'dashesOnly':
+      localNames.add(dashesCamelCase(className))
+      break
+
+    default:
+      localNames.add(className)
+      break
+  }
+}
+
+/**
  * Start a content mapper for CSS modules, optionally compiled from another language.
  *
  * @template {{}} Options
@@ -487,56 +531,12 @@ export function startMapper(adapter) {
     projects.set(projectHandle, {
       configFileName: configFileName ?? '',
       localsConvention: isValidLocalsConvention ? localsConvention : undefined,
-      options: /** @type {Options} */ (validated?.options ?? options),
+      // Without `validateOptions`, the adapter takes no options.
+      options: validated ? validated.options : /** @type {Options} */ ({}),
       lastResults: new Map()
     })
 
     return optionDiagnostics.length ? { optionDiagnostics } : {}
-  }
-
-  /**
-   * Collect local names for a given class name.
-   *
-   * @param {string} projectHandle
-   *   The content mapper project handle for which to use the locals convention.
-   * @param {string} className
-   *   The CSS class name for which to collect local names.
-   * @param {Set<string>} localNames
-   *   The local names to add to.
-   * @see https://github.com/madyankin/postcss-modules/blob/v9.0.1/src/localsConvention.js#L25-L53
-   */
-  function collectLocalNames(projectHandle, className, localNames) {
-    const localsConvention = projects.get(projectHandle)?.localsConvention
-
-    switch (localsConvention) {
-      case 'all':
-        localNames.add(className)
-        localNames.add(camelCase(className))
-        localNames.add(dashesCamelCase(className))
-        break
-
-      case 'camelCase':
-        localNames.add(className)
-        localNames.add(camelCase(className))
-        break
-
-      case 'camelCaseOnly':
-        localNames.add(camelCase(className))
-        break
-
-      case 'dashes':
-        localNames.add(className)
-        localNames.add(dashesCamelCase(className))
-        break
-
-      case 'dashesOnly':
-        localNames.add(dashesCamelCase(className))
-        break
-
-      default:
-        localNames.add(className)
-        break
-    }
   }
 
   /**
@@ -548,12 +548,12 @@ export function startMapper(adapter) {
    *   The file extension, used as the language of previews.
    * @param {string} fileName
    *   The file name of the CSS.
-   * @param {string} projectHandle
-   *   The content mapper project handle.
+   * @param {Project<Options>} project
+   *   The project the CSS belongs to.
    * @returns {{ text: string, mappings: SpanMapping[] }}
    *   The generated text and its mappings to the original content.
    */
-  function generate(source, ext, fileName, projectHandle) {
+  function generate(source, ext, fileName, project) {
     let text = 'declare const styles: {'
     let comment = ''
 
@@ -631,7 +631,7 @@ export function startMapper(adapter) {
                 }
               }
               d.original ??= source.locate(node, selector)
-              collectLocalNames(projectHandle, selector.value, d.localNames)
+              collectLocalNames(project.localsConvention, selector.value, d.localNames)
             })
           })
 
@@ -680,25 +680,26 @@ export function startMapper(adapter) {
    *   The transform response expected by TypeScript.
    */
   function transform({ content, fileName, projectHandle }) {
+    const project = projects.get(projectHandle)
+    assert.ok(project)
+
     const ext = fileName.slice(fileName.lastIndexOf('.') + 1)
 
     if (!adapter.preprocess) {
       return {
         extension: '.cts',
-        ...generate(createCssSource(content), ext, fileName, projectHandle)
+        ...generate(createCssSource(content), ext, fileName, project)
       }
     }
-
-    const project = projects.get(projectHandle)
 
     /** @type {PreprocessResult} */
     let result
     try {
       result = adapter.preprocess({
-        configFileName: project?.configFileName ?? '',
+        configFileName: project.configFileName,
         content,
         fileName,
-        options: /** @type {Options} */ (project?.options ?? {})
+        options: project.options
       })
     } catch (error) {
       // An adapter should report compile errors as diagnostics, but anything it throws is treated
@@ -722,8 +723,8 @@ export function startMapper(adapter) {
       return {
         extension: '.cts',
         text:
-          project?.lastResults.get(fileName) ??
-          generate(createCssSource(''), ext, fileName, projectHandle).text,
+          project.lastResults.get(fileName) ??
+          generate(createCssSource(''), ext, fileName, project).text,
         mappings: [],
         diagnostics: result.diagnostics
       }
@@ -733,9 +734,9 @@ export function startMapper(adapter) {
       createMappedSource(content, fileName, result),
       ext,
       fileName,
-      projectHandle
+      project
     )
-    project?.lastResults.set(fileName, text)
+    project.lastResults.set(fileName, text)
     return { extension: '.cts', text, mappings }
   }
 
