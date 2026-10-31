@@ -21,5 +21,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 26
+          # Disabled as recommended here:
+          # https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#publishing-to-npm-with-trusted-publisher-oidc
+          package-manager-cache: false
       - run: npm install
       - uses: changesets/action@v2
