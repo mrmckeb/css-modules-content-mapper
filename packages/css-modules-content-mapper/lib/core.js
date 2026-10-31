@@ -59,8 +59,8 @@ const allowedLocalsConventions = /** @type {const} */ ([
  *   The original content of the file to transform.
  * @property {string} fileName
  *   The absolute path of the file to transform.
- * @property {Options & CssContentMapperOptions} options
- *   The options from the `contentMappers` entry.
+ * @property {Options} options
+ *   The adapter options returned by `validateOptions`.
  */
 
 /**

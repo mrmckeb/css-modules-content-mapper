@@ -23,9 +23,8 @@ const generatedToken = /(?:#{[^}]*}|[^\s()+,.:>[\]{}~])+/y
  *   The offset where the token ends, or the start offset if there is no token.
  */
 function findTokenEnd(content, offset) {
-  const match = new RegExp(generatedToken.source, 'y')
-  match.lastIndex = offset
-  return match.test(content) ? match.lastIndex : offset
+  generatedToken.lastIndex = offset
+  return generatedToken.test(content) ? generatedToken.lastIndex : offset
 }
 
 /**
@@ -114,9 +113,44 @@ function findRuleEnd(content, offset, indented) {
 }
 
 /**
+ * Check whether an offset is in a line comment.
+ *
+ * `//` in a string, such as in `a[href^="https://"]`, doesn’t start a comment.
+ *
+ * @param {string} content
+ *   The Sass source.
+ * @param {number} lineStart
+ *   The start offset of the line.
+ * @param {number} offset
+ *   The offset to check.
+ * @returns {boolean}
+ *   Whether the offset is in a line comment.
+ */
+function isInLineComment(content, lineStart, offset) {
+  /** @type {string | undefined} */
+  let quote
+  for (let index = lineStart; index < offset; index += 1) {
+    const char = content[index]
+    if (quote) {
+      if (char === '\\') {
+        index += 1
+      } else if (char === quote) {
+        quote = undefined
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char
+    } else if (char === '/' && content[index + 1] === '/') {
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * Check whether an offset is part of a selector.
  *
- * This rules out matches in line comments and in statements such as `@include mixins.name;`.
+ * This rules out matches in line comments, in declarations such as `background: url(icons.png)`,
+ * and in statements such as `@include mixins.name;`.
  *
  * @param {string} content
  *   The Sass source.
@@ -129,12 +163,40 @@ function findRuleEnd(content, offset, indented) {
  */
 function isSelector(content, offset, indented) {
   const lineStart = content.lastIndexOf('\n', offset - 1) + 1
-  if (content.slice(lineStart, offset).includes('//')) {
+  if (isInLineComment(content, lineStart, offset)) {
     return false
   }
 
   if (indented) {
-    return !/^\s*[$+=@]/.test(content.slice(lineStart, offset + 1))
+    let lineEnd = content.indexOf('\n', offset)
+    if (lineEnd === -1) {
+      lineEnd = content.length
+    }
+    const line = content.slice(lineStart, lineEnd)
+    if (/^\s*[$+=@]/.test(line)) {
+      return false
+    }
+
+    // A selector list may continue on the next line.
+    if (line.trimEnd().endsWith(',')) {
+      return true
+    }
+
+    // A selector is followed by a more indented block, whereas a declaration isn’t.
+    const indent = line.length - line.trimStart().length
+    let next = lineEnd + 1
+    while (next < content.length) {
+      let nextEnd = content.indexOf('\n', next)
+      if (nextEnd === -1) {
+        nextEnd = content.length
+      }
+      const nextLine = content.slice(next, nextEnd)
+      if (nextLine.trim()) {
+        return nextLine.length - nextLine.trimStart().length > indent
+      }
+      next = nextEnd + 1
+    }
+    return false
   }
 
   return content[findSelectorEnd(content, offset, false)] === '{'

@@ -1,7 +1,7 @@
 {
   "name": "sass-content-mapper",
   "version": "0.0.0",
-  "description": "TypeScript content mapper for Sass modules",
+  "description": "TypeScript content mapper for Sass CSS modules",
   "keywords": [
     "content-mapper",
     "css-modules",

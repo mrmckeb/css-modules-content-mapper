@@ -3,8 +3,8 @@
  * @import * as Sass from 'sass'
  */
 
-import { dirname, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { dirname, relative, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { startMapper } from 'css-modules-content-mapper'
 
@@ -136,12 +136,28 @@ startMapper({
       }
 
       const { sassMessage, span } = error
-      const inFile = span.url?.href === url.href
-      const start = inFile ? span.start.offset : 0
-      const length = inFile ? span.end.offset - start : 0
+      if (span.url?.href === url.href) {
+        const start = span.start.offset
+        return {
+          diagnostics: [
+            { messageText: sassMessage, start, length: span.end.offset - start, code: 2001 }
+          ]
+        }
+      }
+
+      // The error is in another file, such as a partial loaded using `@use`. Its span can’t be
+      // reported in this file, so the location is added to the message instead.
+      let messageText = sassMessage
+      if (span.url) {
+        const path =
+          span.url.protocol === 'file:'
+            ? relative(dirname(fileName), fileURLToPath(span.url))
+            : span.url.href
+        messageText += ` (${path}:${span.start.line + 1}:${span.start.column + 1})`
+      }
 
       return {
-        diagnostics: [{ messageText: sassMessage, start, length, code: 2001 }]
+        diagnostics: [{ messageText, start: 0, length: 0, code: 2001 }]
       }
     }
   }
